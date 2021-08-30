@@ -7,6 +7,7 @@ const initWasmComparison = async () => {
     const demo2 = document.getElementById("demo-2");
     
     const mem = new WebAssembly.Memory({ initial: 1 });
+    const global = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
 
     const importObject = {
         console: {
