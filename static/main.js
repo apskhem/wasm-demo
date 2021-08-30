@@ -5,6 +5,17 @@ onload = () => {
 const initWasmComparison = async () => {
     const demo1 = document.getElementById("demo-1");
     const demo2 = document.getElementById("demo-2");
+    
+    const mem = new WebAssembly.Memory({ initial: 1 });
+
+    const importObject = {
+        console: {
+            log: consoleLogString
+        },
+        js: {
+            mem
+        }
+    };
 
     const { instance, module } = await WebAssembly.instantiateStreaming(fetch("wasm_demo_bg.wasm"));
 
