@@ -1,3 +1,7 @@
+import { js, sample } from "./module.js";
+
+const ITERATION_COUNT = 10000;
+
 onload = () => {
     initWasmComparison();
 }
@@ -5,69 +9,37 @@ onload = () => {
 const initWasmComparison = async () => {
     const demo1 = document.getElementById("demo-1");
     const demo2 = document.getElementById("demo-2");
+
+    const { instance, module } = await WebAssembly.instantiateStreaming(fetch("wasm/add.wasm"), {});
     
-    const mem = new WebAssembly.Memory({ initial: 1 });
-    const global = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
+    for (const [ name, fn ] of Object.entries(js)) {
+        const args = sample[name];
 
-    const importObject = {
-        console: {
-            log: (x) => {
-                console.log(x)
-            }
-        },
-        js: {
-            mem
+        if (typeof args === "undefined" || typeof instance.exports[name] === "undefined") {
+            throw new Error("Unexpected unready environment.");
         }
-    };
 
-    const { instance, module } = await WebAssembly.instantiateStreaming(fetch("out.wasm"), {});
+        // wasm section
+        const wasm = test(instance.exports[name], args, ITERATION_COUNT);
 
-    const exports = instance.exports;
+        // js section
+        const js = test(fn, args, ITERATION_COUNT);
 
-    console.warn(instance, module);
-
-    // wasm section
-    const wasm = test(() => {
-        exports.add(1e6);
-    }, 1000);
-
-    // js section
-    const js = test(() => {
-        add(1e6);
-    }, 1000);
-
-    demo1.textContent = `WebAssembly: ${wasm.toLocaleString("en")} ms`;
-    demo2.textContent = `JavaScript: ${js.toLocaleString("en")} ms`;
+        demo1.textContent = `WebAssembly: ${wasm.toLocaleString("en")}ms`;
+        demo2.textContent = `JavaScript: ${js.toLocaleString("en")}ms`;
+    }
 }
 
-function test(fn, iteration) {
+function test(fn, args, iteration) {
     const t1 = performance.now();
 
     let i = 0;
     while (i < iteration) {
-        fn();
+        fn(...args);
         i += 1;
     }
 
     const t2 = performance.now();
     
     return t2 - t1;
-}
-
-function add(n) {
-    let res = 0;
-    for (let i = 0; i < n; i++) {
-        res += i
-    }
-
-    return res
-}
-
-function fibonacci(n) {
-    if (n <= 1) {
-        return n;
-    }
-    else {
-        return fibonacci(n - 1) + fibonacci(n - 2);
-    }
 }
