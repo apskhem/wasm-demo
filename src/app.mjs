@@ -4,15 +4,16 @@ import fs from "fs";
 
 const app = express();
 
-app.use(express.static("static"));
-app.use(express.static("pkg"));
+app.use(express.static("public"));
+app.use(express.static("bin"));
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env["PORT"] || 3000;
 
 // route: @post[/login]
 app.get("/", (req, res) => {
-    res.end(fs.readFileSync("static/index.html"));
+    const file = fs.readFileSync("public/index.html");
+    res.end(file);
 });
 
 // server initialization
